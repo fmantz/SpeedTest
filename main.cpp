@@ -108,16 +108,17 @@ std::string testSpeed() {
 
             //performance:
             myStream << "\"performance\":{";
-            myStream << "\"latency\":\"" << sp.latency();
+            myStream << "\"latency\":\"" << sp.latency() << "\"";
+
             long jitter = 0;
             if (sp.jitter(serverInfo, jitter)){
-                myStream << "\",";
+                myStream << ",";
                 myStream << "\"jitter\":\"";
                 myStream << std::fixed;
-                myStream << jitter;
+                myStream << jitter << "\"";
             }
-            myStream << "\",";
-            myStream << "\"linetype\":\"" << preflightConfigDownload.concurrency;
+            myStream << ",";
+            myStream << "\"linetype\":\"" << preflightConfigDownload.concurrency << "\"";
 
             double preSpeed = 0;
             if (sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){
@@ -132,10 +133,10 @@ std::string testSpeed() {
                 if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){
                     std::cout << (success ? '.' : '*') << std::flush;
                 })){
-                    myStream << "\",";
+                    myStream << ",";
                     myStream << "\"download\":\"";
                     myStream << std::fixed;
-                    myStream << (downloadSpeed*1000*1000);
+                    myStream << (downloadSpeed*1000*1000) << "\"";
                 }
 
                double uploadSpeed = 0;
@@ -143,10 +144,10 @@ std::string testSpeed() {
                     if (programOptions.output_type == OutputType::verbose)
                         std::cout << (success ? '.' : '*') << std::flush;
                 })){
-                    myStream << "\",";
+                    myStream << ",";
                     myStream << "\"upload\":\"";
                     myStream << std::fixed;
-                    myStream << (uploadSpeed*1000*1000);
+                    myStream << (uploadSpeed*1000*1000) << "\"";
                 }
             }
         }
