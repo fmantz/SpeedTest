@@ -55,7 +55,7 @@ std::string exec(const char* cmd) {
 }
 
 extern "C"  //prevent C++ name mangling!
-int testSpeed() {
+std::string testSpeed() {
 
     ProgramOptions programOptions;
     signal(SIGPIPE, SIG_IGN);
@@ -66,16 +66,13 @@ int testSpeed() {
     ServerInfo serverQualityInfo;
 
     //string buffer as stream
-    char buf[4096];
-    std::stringstream stream;
-    stream.rdbuf()->pubsetbuf(buf, sizeof(buf));
-
-    std::cout << "{";
+    std::stringstream myStream;
+    myStream << "{";
 
     //timestamp:
     auto timestamp = std::time(nullptr);
     auto timestampLocal = *std::localtime(&timestamp);
-    std::cout << "\"timestamp\":\""    <<  std::put_time(&timestampLocal, "%Y-%m-%d %H:%M:%S") << "\",";
+    myStream << "\"timestamp\":\""    <<  std::put_time(&timestampLocal, "%Y-%m-%d %H:%M:%S") << "\",";
 
     if (sp.ipInfo(info)){
 
@@ -84,13 +81,13 @@ int testSpeed() {
         wlan.pop_back(); //remove endline
 
         //client info:
-        std::cout << "\"client\":{";
-        std::cout << "\"wlan\":\""    << wlan << "\",";
-        std::cout << "\"ip\":\""      << info.ip_address << "\",";
-        std::cout << "\"lat\":\""     << info.lat << "\",";
-        std::cout << "\"lon\":\""     << info.lon << "\",";
-        std::cout << "\"isp\":\""     << info.isp << "\"";
-        std::cout << "},";
+        myStream << "\"client\":{";
+        myStream << "\"wlan\":\""    << wlan << "\",";
+        myStream << "\"ip\":\""      << info.ip_address << "\",";
+        myStream << "\"lat\":\""     << info.lat << "\",";
+        myStream << "\"lon\":\""     << info.lon << "\",";
+        myStream << "\"isp\":\""     << info.isp << "\"";
+        myStream << "},";
 
         auto serverList = sp.serverList();
 
@@ -102,25 +99,25 @@ int testSpeed() {
             });
 
             //server info:
-            std::cout << "\"server\":{";
-            std::cout << "\"name\":\"" << serverInfo.name << "\",";
-            std::cout << "\"sponsor\":\"" << serverInfo.sponsor << "\",";
-            std::cout << "\"distance\":\"" << serverInfo.distance << "\",";
-            std::cout << "\"host\":\"" << serverInfo.host << "\"";
-            std::cout << "},";
+            myStream << "\"server\":{";
+            myStream << "\"name\":\"" << serverInfo.name << "\",";
+            myStream << "\"sponsor\":\"" << serverInfo.sponsor << "\",";
+            myStream << "\"distance\":\"" << serverInfo.distance << "\",";
+            myStream << "\"host\":\"" << serverInfo.host << "\"";
+            myStream << "},";
 
             //performance:
-            std::cout << "\"performance\":{";
-            std::cout << "\"latency\":\"" << sp.latency();
+            myStream << "\"performance\":{";
+            myStream << "\"latency\":\"" << sp.latency();
             long jitter = 0;
             if (sp.jitter(serverInfo, jitter)){
-                std::cout << "\",";
-                std::cout << "\"jitter\":\"";
-                std::cout << std::fixed;
-                std::cout << jitter;
+                myStream << "\",";
+                myStream << "\"jitter\":\"";
+                myStream << std::fixed;
+                myStream << jitter;
             }
-            std::cout << "\",";
-            std::cout << "\"linetype\":\"" << preflightConfigDownload.concurrency;
+            myStream << "\",";
+            myStream << "\"linetype\":\"" << preflightConfigDownload.concurrency;
 
             double preSpeed = 0;
             if (sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){
@@ -135,10 +132,10 @@ int testSpeed() {
                 if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){
                     std::cout << (success ? '.' : '*') << std::flush;
                 })){
-                    std::cout << "\",";
-                    std::cout << "\"download\":\"";
-                    std::cout << std::fixed;
-                    std::cout << (downloadSpeed*1000*1000);
+                    myStream << "\",";
+                    myStream << "\"download\":\"";
+                    myStream << std::fixed;
+                    myStream << (downloadSpeed*1000*1000);
                 }
 
                double uploadSpeed = 0;
@@ -146,25 +143,25 @@ int testSpeed() {
                     if (programOptions.output_type == OutputType::verbose)
                         std::cout << (success ? '.' : '*') << std::flush;
                 })){
-                    std::cout << "\",";
-                    std::cout << "\"upload\":\"";
-                    std::cout << std::fixed;
-                    std::cout << (uploadSpeed*1000*1000);
+                    myStream << "\",";
+                    myStream << "\"upload\":\"";
+                    myStream << std::fixed;
+                    myStream << (uploadSpeed*1000*1000);
                 }
             }
         }
-        std::cout << "}";
+        myStream << "}";
     }
-    std::cout << "}" << std::endl;
-    std::cout << std::flush;
+    myStream << "}";
 
-    return EXIT_SUCCESS;
-
+    return myStream.str();
 }
 
 int main(const int argc, const char **argv) {
 
-    testSpeed();
+    auto rs = testSpeed();
+    std::cout << std::endl << rs << std::endl;
+
 
 /*
 
