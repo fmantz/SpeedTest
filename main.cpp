@@ -117,8 +117,6 @@ std::string testSpeed() {
                 myStream << std::fixed;
                 myStream << jitter << "\"";
             }
-            myStream << ",";
-            myStream << "\"linetype\":\"" << preflightConfigDownload.concurrency << "\"";
 
             double preSpeed = 0;
             if (sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){
@@ -128,6 +126,11 @@ std::string testSpeed() {
                 TestConfig uploadConfig;
                 TestConfig downloadConfig;
                 testConfigSelector(preSpeed, uploadConfig, downloadConfig);
+
+                myStream << ",";
+                myStream << "\"downloadConfig\":\"" << downloadConfig.label << "\"";
+                myStream << ",";
+                myStream << "\"uploadConfig\":\"" << uploadConfig.label << "\"";
 
                 double downloadSpeed = 0;
                 if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){
