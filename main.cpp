@@ -30,7 +30,111 @@ void usage(const char* name){
     std::cerr << "  --output verbose|text|json  Set output type. Default: verbose\n";
 }
 
+extern "C"  //prevent C++ name mangling!
+int testSpeed() {
+
+    ProgramOptions programOptions;
+    signal(SIGPIPE, SIG_IGN);
+
+    auto sp = SpeedTest(SPEED_TEST_MIN_SERVER_VERSION);
+    IPInfo info;
+    ServerInfo serverInfo;
+    ServerInfo serverQualityInfo;
+
+    if (!sp.ipInfo(info)){
+        std::cerr << "Unable to retrieve your IP info. Try again later" << std::endl;
+        if (programOptions.output_type == OutputType::json)
+            std::cout << "\"error\":\"unable to retrieve your ip info\"}" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    //client info:
+    std::cout << "\"client\":{";
+    std::cout << "\"ip\":\""  << info.ip_address << "\",";
+    std::cout << "\"lat\":\"" << info.lat << "\",";
+    std::cout << "\"lon\":\"" << info.lon << "\",";
+    std::cout << "\"isp\":\"" << info.isp << "\"";
+    std::cout << "},";
+
+    auto serverList = sp.serverList();
+
+    if(serverList.empty()){
+
+
+    } else {
+
+        ServerInfo serverInfo = sp.bestServer(10, [&programOptions](bool success) {
+            if (programOptions.output_type == OutputType::verbose)
+                std::cout << (success ? '.' : '*') << std::flush;
+        });
+
+        //server info:
+        std::cout << "\"server\":{";
+        std::cout << "\"name\":\"" << serverInfo.name << "\",";
+        std::cout << "\"sponsor\":\"" << serverInfo.sponsor << "\",";
+        std::cout << "\"distance\":\"" << serverInfo.distance << "\",";
+        std::cout << "\"host\":\"" << serverInfo.host << "\"";
+        std::cout << "},";
+
+        std::cout << "\"performance\":{";
+        std::cout << "\"latency\":\"" << sp.latency() << "\",";
+        long jitter = 0;
+        if (sp.jitter(serverInfo, jitter)){
+            std::cout << "\"jitter\":\"";
+            std::cout << std::fixed;
+            std::cout << jitter << "\",";
+        } else {
+
+        }
+        std::cout << "\"linetype\":\"" << preflightConfigDownload.concurrency << "\",";
+
+        double preSpeed = 0;
+        if (sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){
+             std::cout << (success ? '.' : '*') << std::flush;
+        })){
+
+            TestConfig uploadConfig;
+            TestConfig downloadConfig;
+            testConfigSelector(preSpeed, uploadConfig, downloadConfig);
+
+            double downloadSpeed = 0;
+            if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){
+                std::cout << (success ? '.' : '*') << std::flush;
+            })){
+                std::cout << "\"download\":\"";
+                std::cout << std::fixed;
+                std::cout << (downloadSpeed*1000*1000) << "\",";
+            } else {
+
+
+            }
+
+           double uploadSpeed = 0;
+            if (sp.uploadSpeed(serverInfo, uploadConfig, uploadSpeed, [&programOptions](bool success){
+                if (programOptions.output_type == OutputType::verbose)
+                    std::cout << (success ? '.' : '*') << std::flush;
+            })){
+                std::cout << "\"upload\":\"";
+                std::cout << std::fixed;
+                std::cout << (uploadSpeed*1000*1000) << "\",";
+            } else {
+
+
+            }
+        }
+        std::cout << "}\n";
+        std::cout << std::flush;
+    }
+
+    return EXIT_SUCCESS;
+
+}
+
 int main(const int argc, const char **argv) {
+
+    testSpeed();
+
+/*
 
     ProgramOptions programOptions;
 
@@ -305,6 +409,8 @@ int main(const int argc, const char **argv) {
 
     if (programOptions.output_type == OutputType::json)
         std::cout << "\"_\":\"all ok\"}" << std::endl;
+
+*/
 
     return EXIT_SUCCESS;
 }
