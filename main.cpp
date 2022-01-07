@@ -6,6 +6,15 @@
 #include "CmdOptions.h"
 #include <csignal>
 
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <array>
+#include <algorithm>
+#include <ctime>
+
 void banner(){
     std::cout << "SpeedTest++ version " << SpeedTest_VERSION_MAJOR << "." << SpeedTest_VERSION_MINOR << std::endl;
     std::cout << "Speedtest.net command line interface" << std::endl;
@@ -30,6 +39,21 @@ void usage(const char* name){
     std::cerr << "  --output verbose|text|json  Set output type. Default: verbose\n";
 }
 
+//Special output:
+
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
+}
+
 extern "C"  //prevent C++ name mangling!
 int testSpeed() {
 
@@ -41,90 +65,98 @@ int testSpeed() {
     ServerInfo serverInfo;
     ServerInfo serverQualityInfo;
 
-    if (!sp.ipInfo(info)){
-        std::cerr << "Unable to retrieve your IP info. Try again later" << std::endl;
-        if (programOptions.output_type == OutputType::json)
-            std::cout << "\"error\":\"unable to retrieve your ip info\"}" << std::endl;
-        return EXIT_FAILURE;
-    }
+    //string buffer as stream
+    char buf[4096];
+    std::stringstream stream;
+    stream.rdbuf()->pubsetbuf(buf, sizeof(buf));
 
-    //client info:
-    std::cout << "\"client\":{";
-    std::cout << "\"ip\":\""  << info.ip_address << "\",";
-    std::cout << "\"lat\":\"" << info.lat << "\",";
-    std::cout << "\"lon\":\"" << info.lon << "\",";
-    std::cout << "\"isp\":\"" << info.isp << "\"";
-    std::cout << "},";
+    std::cout << "{";
 
-    auto serverList = sp.serverList();
+    //timestamp:
+    auto timestamp = std::time(nullptr);
+    auto timestampLocal = *std::localtime(&timestamp);
+    std::cout << "\"timestamp\":\""    <<  std::put_time(&timestampLocal, "%Y-%m-%d %H:%M:%S") << "\",";
 
-    if(serverList.empty()){
+    if (sp.ipInfo(info)){
 
+        std::string wlan = exec("iwgetid");
+        std::replace(wlan.begin(), wlan.end(), '"', '\'');
+        wlan.pop_back(); //remove endline
 
-    } else {
-
-        ServerInfo serverInfo = sp.bestServer(10, [&programOptions](bool success) {
-            if (programOptions.output_type == OutputType::verbose)
-                std::cout << (success ? '.' : '*') << std::flush;
-        });
-
-        //server info:
-        std::cout << "\"server\":{";
-        std::cout << "\"name\":\"" << serverInfo.name << "\",";
-        std::cout << "\"sponsor\":\"" << serverInfo.sponsor << "\",";
-        std::cout << "\"distance\":\"" << serverInfo.distance << "\",";
-        std::cout << "\"host\":\"" << serverInfo.host << "\"";
+        //client info:
+        std::cout << "\"client\":{";
+        std::cout << "\"wlan\":\""    << wlan << "\",";
+        std::cout << "\"ip\":\""      << info.ip_address << "\",";
+        std::cout << "\"lat\":\""     << info.lat << "\",";
+        std::cout << "\"lon\":\""     << info.lon << "\",";
+        std::cout << "\"isp\":\""     << info.isp << "\"";
         std::cout << "},";
 
-        std::cout << "\"performance\":{";
-        std::cout << "\"latency\":\"" << sp.latency() << "\",";
-        long jitter = 0;
-        if (sp.jitter(serverInfo, jitter)){
-            std::cout << "\"jitter\":\"";
-            std::cout << std::fixed;
-            std::cout << jitter << "\",";
-        } else {
+        auto serverList = sp.serverList();
 
-        }
-        std::cout << "\"linetype\":\"" << preflightConfigDownload.concurrency << "\",";
+        if(!serverList.empty()){
 
-        double preSpeed = 0;
-        if (sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){
-             std::cout << (success ? '.' : '*') << std::flush;
-        })){
-
-            TestConfig uploadConfig;
-            TestConfig downloadConfig;
-            testConfigSelector(preSpeed, uploadConfig, downloadConfig);
-
-            double downloadSpeed = 0;
-            if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){
-                std::cout << (success ? '.' : '*') << std::flush;
-            })){
-                std::cout << "\"download\":\"";
-                std::cout << std::fixed;
-                std::cout << (downloadSpeed*1000*1000) << "\",";
-            } else {
-
-
-            }
-
-           double uploadSpeed = 0;
-            if (sp.uploadSpeed(serverInfo, uploadConfig, uploadSpeed, [&programOptions](bool success){
+            ServerInfo serverInfo = sp.bestServer(10, [&programOptions](bool success) {
                 if (programOptions.output_type == OutputType::verbose)
                     std::cout << (success ? '.' : '*') << std::flush;
-            })){
-                std::cout << "\"upload\":\"";
+            });
+
+            //server info:
+            std::cout << "\"server\":{";
+            std::cout << "\"name\":\"" << serverInfo.name << "\",";
+            std::cout << "\"sponsor\":\"" << serverInfo.sponsor << "\",";
+            std::cout << "\"distance\":\"" << serverInfo.distance << "\",";
+            std::cout << "\"host\":\"" << serverInfo.host << "\"";
+            std::cout << "},";
+
+            //performance:
+            std::cout << "\"performance\":{";
+            std::cout << "\"latency\":\"" << sp.latency();
+            long jitter = 0;
+            if (sp.jitter(serverInfo, jitter)){
+                std::cout << "\",";
+                std::cout << "\"jitter\":\"";
                 std::cout << std::fixed;
-                std::cout << (uploadSpeed*1000*1000) << "\",";
-            } else {
+                std::cout << jitter;
+            }
+            std::cout << "\",";
+            std::cout << "\"linetype\":\"" << preflightConfigDownload.concurrency;
 
+            double preSpeed = 0;
+            if (sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){
+                 std::cout << (success ? '.' : '*') << std::flush;
+            })){
 
+                TestConfig uploadConfig;
+                TestConfig downloadConfig;
+                testConfigSelector(preSpeed, uploadConfig, downloadConfig);
+
+                double downloadSpeed = 0;
+                if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){
+                    std::cout << (success ? '.' : '*') << std::flush;
+                })){
+                    std::cout << "\",";
+                    std::cout << "\"download\":\"";
+                    std::cout << std::fixed;
+                    std::cout << (downloadSpeed*1000*1000);
+                }
+
+               double uploadSpeed = 0;
+                if (sp.uploadSpeed(serverInfo, uploadConfig, uploadSpeed, [&programOptions](bool success){
+                    if (programOptions.output_type == OutputType::verbose)
+                        std::cout << (success ? '.' : '*') << std::flush;
+                })){
+                    std::cout << "\",";
+                    std::cout << "\"upload\":\"";
+                    std::cout << std::fixed;
+                    std::cout << (uploadSpeed*1000*1000);
+                }
             }
         }
-        std::cout << "}\n";
-        std::cout << std::flush;
+        std::cout << "}";
     }
+    std::cout << "}" << std::endl;
+    std::cout << std::flush;
 
     return EXIT_SUCCESS;
 
