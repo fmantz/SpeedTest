@@ -39,6 +39,6 @@ cmake_install.cmake
 CMakeCache.txt
 Makefile
 SpeedTest
+speedtestJson
 SpeedTestConfig.h
 CMakeFiles/
-install_manifest.txt
