@@ -35,7 +35,7 @@ set(COMMON_SOURCE_FILES
         CmdOptions.h)
 
 set(EXE_SOURCE_FILES main.cpp)
-set(LIB_SOURCE_FILES libary.cpp)
+set(LIB_SOURCE_FILES libary.cpp libspeedtest.h)
 
 configure_file (
         "${PROJECT_SOURCE_DIR}/SpeedTestConfig.h.in"
