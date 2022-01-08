@@ -41,3 +41,4 @@ Makefile
 SpeedTest
 SpeedTestConfig.h
 CMakeFiles/
+install_manifest.txt
