@@ -18,7 +18,7 @@ It supports the new (undocumented) raw TCP protocol for better accuracy.
 
 5. Provide a URL to the speedtest.net share results image using option --share
 
-6. Build a static lib "libspeedtest.a" providing a never failing method "std:String testSpeed()" to produce a JSON String with some extra information. (Added by me!)
+6. Build an additional never-failing parameterless cmd "speedtestJson" to produce a JSON String with some extra information. (Added by me!)
 
 ## Installation
 

@@ -35,7 +35,7 @@ set(COMMON_SOURCE_FILES
         CmdOptions.h)
 
 set(EXE_SOURCE_FILES main.cpp)
-set(LIB_SOURCE_FILES libary.cpp)
+set(CMD_SOURCE_FILES jsCmd.cpp)
 
 configure_file (
         "${PROJECT_SOURCE_DIR}/SpeedTestConfig.h.in"
@@ -45,9 +45,6 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 
 add_executable(SpeedTest ${COMMON_SOURCE_FILES} ${EXE_SOURCE_FILES})
-
-#Added by me (Florian Mantz):
-add_library(speedtest STATIC ${COMMON_SOURCE_FILES} ${LIB_SOURCE_FILES})
 
 INCLUDE (CheckIncludeFiles)
 find_package(CURL REQUIRED)
@@ -63,3 +60,24 @@ include_directories(${CURL_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
 target_link_libraries(SpeedTest ${CURL_LIBRARIES} ${LIBXML2_LIBRARIES} -lpthread ${OPENSSL_LIBRARIES})
 
 install(TARGETS SpeedTest RUNTIME DESTINATION bin)
+
+
+
+# New extra executable (Florian Mantz):
+
+add_executable(speedtestJson ${COMMON_SOURCE_FILES} ${CMD_SOURCE_FILES})
+
+INCLUDE (CheckIncludeFiles)
+find_package(CURL REQUIRED)
+find_package(LibXml2 REQUIRED)
+
+if (NOT (APPLE))
+    find_package(OpenSSL REQUIRED)
+else()
+    CHECK_INCLUDE_FILES("CommonCrypto/CommonDigest.h" HAVE_COMMON_DIGEST_H)
+endif()
+
+include_directories(${CURL_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
+target_link_libraries(speedtestJson ${CURL_LIBRARIES} ${LIBXML2_LIBRARIES} -lpthread ${OPENSSL_LIBRARIES})
+
+install(TARGETS speedtestJson RUNTIME DESTINATION bin)

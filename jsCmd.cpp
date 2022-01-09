@@ -25,7 +25,7 @@ std::string exec(const char* cmd) {
     std::string result;
     std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
     if (!pipe) {
-        throw std::runtime_error("popen() failed!");
+        return result; //empty string!
     }
     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
         result += buffer.data();
@@ -33,8 +33,7 @@ std::string exec(const char* cmd) {
     return result;
 }
 
-extern "C"  //prevent C++ name mangling!
-std::string testSpeed() {
+int main() {
 
     ProgramOptions programOptions;
     signal(SIGPIPE, SIG_IGN);
@@ -72,10 +71,7 @@ std::string testSpeed() {
 
         if(!serverList.empty()){
 
-            ServerInfo serverInfo = sp.bestServer(10, [&programOptions](bool success) {
-                if (programOptions.output_type == OutputType::verbose)
-                    std::cout << (success ? '.' : '*') << std::flush;
-            });
+            ServerInfo serverInfo = sp.bestServer(10, [&programOptions](bool success) {});
 
             //server info:
             myStream << "\"server\":{";
@@ -98,9 +94,7 @@ std::string testSpeed() {
             }
 
             double preSpeed = 0;
-            if (sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){
-                 std::cout << (success ? '.' : '*') << std::flush;
-            })){
+            if (sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){})){
 
                 TestConfig uploadConfig;
                 TestConfig downloadConfig;
@@ -112,9 +106,7 @@ std::string testSpeed() {
                 myStream << "\"uploadConfig\":\"" << uploadConfig.label << "\"";
 
                 double downloadSpeed = 0;
-                if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){
-                    std::cout << (success ? '.' : '*') << std::flush;
-                })){
+                if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){})){
                     myStream << ",";
                     myStream << "\"download\":\"";
                     myStream << std::fixed;
@@ -122,10 +114,7 @@ std::string testSpeed() {
                 }
 
                double uploadSpeed = 0;
-                if (sp.uploadSpeed(serverInfo, uploadConfig, uploadSpeed, [&programOptions](bool success){
-                    if (programOptions.output_type == OutputType::verbose)
-                        std::cout << (success ? '.' : '*') << std::flush;
-                })){
+                if (sp.uploadSpeed(serverInfo, uploadConfig, uploadSpeed, [&programOptions](bool success){})){
                     myStream << ",";
                     myStream << "\"upload\":\"";
                     myStream << std::fixed;
@@ -137,5 +126,7 @@ std::string testSpeed() {
     }
     myStream << "}";
 
-    return myStream.str();
+    std::cout << myStream.str() << std::endl << std::flush;
+
+    return EXIT_SUCCESS;
 }
