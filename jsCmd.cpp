@@ -56,7 +56,9 @@ int main() {
 
         std::string wlan = exec("iwgetid");
         std::replace(wlan.begin(), wlan.end(), '"', '\'');
-        wlan.pop_back(); //remove endline
+        if (!wlan.empty()) {
+            wlan.pop_back(); //remove endline
+        }
 
         //client info:
         myStream << "\"client\":{";
