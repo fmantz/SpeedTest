@@ -67,7 +67,7 @@ int main() {
         myStream << "\"lat\":\""     << info.lat << "\",";
         myStream << "\"lon\":\""     << info.lon << "\",";
         myStream << "\"isp\":\""     << info.isp << "\"";
-        myStream << "},";
+        myStream << "}";
 
         auto serverList = sp.serverList();
 
@@ -76,6 +76,7 @@ int main() {
             ServerInfo serverInfo = sp.bestServer(10, [&programOptions](bool success) {});
 
             //server info:
+            myStream << ", ";
             myStream << "\"server\":{";
             myStream << "\"name\":\"" << serverInfo.name << "\",";
             myStream << "\"sponsor\":\"" << serverInfo.sponsor << "\",";
@@ -123,8 +124,8 @@ int main() {
                     myStream << (uploadSpeed*1000*1000) << "\"";
                 }
             }
+            myStream << "}";
         }
-        myStream << "}";
     }
     myStream << "}";
 

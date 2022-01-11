@@ -4,7 +4,7 @@ project(SpeedTest)
 set(SOURCE "./")
 
 set (SpeedTest_VERSION_MAJOR 1)
-set (SpeedTest_VERSION_MINOR 14)
+set (SpeedTest_VERSION_MINOR 15)
 set (SpeedTest_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR})
 set (SpeedTest_SYSTEM ${CMAKE_SYSTEM})
 
