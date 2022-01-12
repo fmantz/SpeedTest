@@ -18,6 +18,12 @@
 #include <array>
 #include <algorithm>
 #include <ctime>
+#include <chrono>
+#include <thread>
+
+
+#define GET_WLAN_ID "/usr/sbin/iwgetid"
+#define DATE_TIME_FORMAT "%Y-%m-%d %H:%M:%S"
 
 //run command (source: stackoverflow)
 std::string exec(const char* cmd) {
@@ -38,6 +44,9 @@ int main() {
     ProgramOptions programOptions;
     signal(SIGPIPE, SIG_IGN);
 
+    //there is no need to check the ssl:
+    programOptions.insecure = true;
+
     auto sp = SpeedTest(SPEED_TEST_MIN_SERVER_VERSION);
     IPInfo info;
     ServerInfo serverInfo;
@@ -50,13 +59,13 @@ int main() {
     //timestamp:
     auto timestamp = std::time(nullptr);
     auto timestampLocal = *std::localtime(&timestamp);
-    myStream << "\"timestamp\":\""    <<  std::put_time(&timestampLocal, "%Y-%m-%d %H:%M:%S") << "\",";
+    myStream << "\"timestamp\":\""    <<  std::put_time(&timestampLocal, DATE_TIME_FORMAT) << "\",";
 
     if (sp.ipInfo(info)){
 
-        std::string wlan = exec("iwgetid");
-        std::replace(wlan.begin(), wlan.end(), '"', '\'');
+        std::string wlan = exec(GET_WLAN_ID);
         if (!wlan.empty()) {
+            std::replace(wlan.begin(), wlan.end(), '"', '\'');
             wlan.pop_back(); //remove endline
         }
 
@@ -70,6 +79,12 @@ int main() {
         myStream << "}";
 
         auto serverList = sp.serverList();
+
+        //retry:
+        for(int count = 0; serverList.empty() && count < 3; count ++) {
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+            serverList = sp.serverList();
+        }
 
         if(!serverList.empty()){
 
