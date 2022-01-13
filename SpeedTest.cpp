@@ -423,7 +423,7 @@ bool SpeedTest::fetchServers(const std::string& url, std::vector<ServerInfo>& ta
     auto isHttpSchema = url.find_first_of("http") == 0;
 
     CURL* curl = curl_easy_init();
-    auto cres = httpGet(url, oss, curl, 120); //timeout after 2 minutes
+    auto cres = httpGet(url, oss, curl, 60); //timeout after 1 minutes
 
     if (cres != CURLE_OK){
         std::cerr << "Curl init failed!" << std::endl;
@@ -437,7 +437,7 @@ bool SpeedTest::fetchServers(const std::string& url, std::vector<ServerInfo>& ta
 
         if (http_code != 200){
             curl_easy_cleanup(curl);
-            std::cerr << "Curl response not ok!" << std::endl;
+            //std::cerr << "Curl response not ok!" << std::endl;
             return false;
         }
     } else {

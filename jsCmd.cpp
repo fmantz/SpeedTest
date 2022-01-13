@@ -81,12 +81,14 @@ int main() {
         auto serverList = sp.serverList();
 
         //retry:
-        for(int count = 0; serverList.empty() && count < 3; count ++) {
-            std::this_thread::sleep_for(std::chrono::seconds(10));
+        for(int count = 1; serverList.empty() && count < 10; count ++) {
+            std::this_thread::sleep_for(std::chrono::seconds(count * 10));
             serverList = sp.serverList();
         }
 
-        if(!serverList.empty()){
+        if(serverList.empty()) {
+            std::cerr << "could not fetch serverList after 10 tries." << std::endl;
+        } else {
 
             ServerInfo serverInfo = sp.bestServer(10, [&programOptions](bool success) {});
 
