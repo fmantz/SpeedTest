@@ -103,14 +103,14 @@ int main() {
 
             //performance:
             myStream << "\"performance\":{";
-            myStream << "\"latency\":\"" << sp.latency() << "\"";
+            myStream << "\"latency\":" << sp.latency();
 
             long jitter = 0;
             if (sp.jitter(serverInfo, jitter)){
                 myStream << ",";
-                myStream << "\"jitter\":\"";
+                myStream << "\"jitter\":";
                 myStream << std::fixed;
-                myStream << jitter << "\"";
+                myStream << jitter;
             }
 
             double preSpeed = 0;
@@ -128,17 +128,17 @@ int main() {
                 double downloadSpeed = 0;
                 if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){})){
                     myStream << ",";
-                    myStream << "\"download\":\"";
+                    myStream << "\"download\":";
                     myStream << std::fixed;
-                    myStream << (downloadSpeed*1000*1000) << "\"";
+                    myStream << (downloadSpeed*1000*1000);
                 }
 
                double uploadSpeed = 0;
                 if (sp.uploadSpeed(serverInfo, uploadConfig, uploadSpeed, [&programOptions](bool success){})){
                     myStream << ",";
-                    myStream << "\"upload\":\"";
+                    myStream << "\"upload\":";
                     myStream << std::fixed;
-                    myStream << (uploadSpeed*1000*1000) << "\"";
+                    myStream << (uploadSpeed*1000*1000);
                 }
             }
             myStream << "}";
